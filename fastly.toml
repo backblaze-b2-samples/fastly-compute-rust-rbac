@@ -1,17 +1,20 @@
-authors = ["<oss@fastly.com>"]
-name = "Authenticate at edge with OAuth"
-description = "Connect to an identity provider such as Auth0 using OAuth 2.0 and validate authentication status at the Edge, to authorize access to your edge or origin hosted applications."
+# This file describes a Fastly Compute@Edge package. To learn more visit:
+# https://developer.fastly.com/reference/fastly-toml/
+
+authors = ["evangelism@backblaze.com"]
+description = "Backblaze B2/Fastly OAuth demo for DeveloperWeek CloudX 2023"
 language = "rust"
 manifest_version = 2
+name = "Role-based access control at the edge"
 
 [setup]
 
   [setup.backends]
 
     [setup.backends.backend]
+      address = "{your-bucket-name}.s3.{your-bucket-region}.backblazeb2.com"
       description = "Content or application origin"
-      address = "httpbin.org"
 
     [setup.backends.idp]
+      address = "dev-12345678.okta.com"
       description = "Identity provider authorization server"
-      address = "dev-xxxxxxxxx.us.auth0.com"

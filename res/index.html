@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DeveloperWeek CloudX Demo - Proxy via Fastly Compute@Edge Application</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel='stylesheet'
+          href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css'
+          integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM"
+          crossorigin="anonymous">
+</head>
+<body>
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <ul class="nav navbar-nav">
+                <img src="https://assets-global.website-files.com/63d32de856f6323a43a277f2/63d32de856f6326171a27822_logo-backblaze-flame-header.4851ea2289eaf4242079c6dcd0acb1be.png" height="50" style="padding: 10px;">
+            </ul>
+            <form class="navbar-form navbar-right" method="get" action="/logout">
+                <button class="btn btn-danger" id="logout-button" type="submit">Logout</button>
+            </form>
+        </div>
+    </nav>
+    <div class="container" id="content">
+        <h2>DeveloperWeek CloudX Demo - Proxy via Fastly Compute@Edge Application</h2>
+        <br>
+        <div>
+            <p>Welcome back, <span id="name">&nbsp;</span>!</p>
+            <p>You have successfully authenticated against your Okta org, and have been redirected back to this application.</p>
+        </div>
+        <ul id="doclist">
+            <li>
+                <a href="internal.pdf">Internal doc</a>
+            </li>
+
+        </ul>
+        <p>
+            <a href="/logout">Logout</a>
+        </p>
+    </div>
+    <script>
+      const COOKIE_PREFIX = "b2-fastly-demo-";
+      const cookies = document.cookie
+          .split("; ")
+          .filter(row => row.startsWith(COOKIE_PREFIX))
+          .map(row => row.replace(COOKIE_PREFIX, ""));
+
+      function getTokenFromCookie(cookie_name) {
+        // Get cookie value, the JWT
+        const token_jwt = cookies.find(row => row.startsWith(cookie_name+"="))
+            ?.split("=")[1];
+        // Return parsed token
+        return token_jwt ? JSON.parse(atob(token_jwt.split('.')[1])) : null;
+      }
+
+      function getAccessToken() {
+        return getTokenFromCookie("access_token");
+      }
+
+      function getIdentityToken() {
+        return getTokenFromCookie("id_token");
+      }
+
+      function addDocument(list, text, link) {
+        const ul = document.getElementById(list);
+        const li = document.createElement("li");
+        const a = document.createElement("a");
+        a.appendChild(document.createTextNode(text));
+        a.href = link;
+        li.appendChild(a);
+        ul.appendChild(li);
+      }
+
+      // With org authorization server, access token is for accessing Okta APIs
+      const access_token = getAccessToken();
+      console.log("Access Token:", JSON.stringify(access_token, null, 2))
+
+      // Identity token contains claims corresponding to requested scopes
+      const identity_token = getIdentityToken();
+      console.log("Identity Token:", JSON.stringify(identity_token, null, 2))
+
+      const name = identity_token ? identity_token["name"] : "Stranger";
+      document.getElementById("name").textContent = name;
+
+      if (identity_token && identity_token["groups"].includes("accounting")) {
+        addDocument("doclist", "Accounting doc", "accounting/accounts.pdf")
+      }
+    </script>
+</body>
+</html>

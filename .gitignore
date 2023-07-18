@@ -5,3 +5,6 @@
 /pkg
 .DS_Store
 .tmp*
+
+# IntelliJ
+.idea

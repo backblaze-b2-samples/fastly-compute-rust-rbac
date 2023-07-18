@@ -5,14 +5,21 @@ authors = []
 edition = "2018"
 
 [profile.release]
-debug = true
+debug = false
 
 [dependencies]
-fastly = "0.9.2"
+chrono = "0.4.26"
+fastly = "0.9.5"
+hex = "0.4.2"
 hmac-sha256 = "1.1.6"
+jwt-simple = "0.11.4"
+lazy_static = "1.4.0"
+log = "0.4.19"
+log-fastly = "0.9.5"
 rand = "0.8.5"
+regex = "1.4.2"
 serde = { version = "1.0.159", features = ["derive"] }
 serde_json = "1.0.95"
 base64 = "0.21.0"
 toml = "0.5.9"
-jwt-simple = "0.11.4"
+urlencoding = "2.1.2"

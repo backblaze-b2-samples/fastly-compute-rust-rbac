@@ -36,6 +36,7 @@ pub struct OpenIdConfiguration<'a> {
     pub authorization_endpoint: &'a str,
     pub token_endpoint: &'a str,
     pub userinfo_endpoint: &'a str,
+    pub end_session_endpoint: &'a str,
 }
 
 #[derive(Deserialize, Default)]

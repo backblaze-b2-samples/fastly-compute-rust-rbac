@@ -1,14 +1,10 @@
 use crate::cookies;
 use fastly::http::{header::SET_COOKIE, StatusCode};
-use fastly::{Body, Response};
+use fastly::{Body, Error, Request, Response};
 
 pub fn unauthorized(body: impl Into<Body>) -> Response {
     let mut res = Response::from_body(body)
-        .with_status(StatusCode::UNAUTHORIZED)
-        .with_header(SET_COOKIE, cookies::expired("access_token"));
-    res.append_header(SET_COOKIE, cookies::expired("id_token"));
-    res.append_header(SET_COOKIE, cookies::expired("code_verifier"));
-    res.append_header(SET_COOKIE, cookies::expired("state"));
+        .with_status(StatusCode::UNAUTHORIZED);
     res
 }
 
@@ -26,4 +22,38 @@ pub fn temporary_redirect(
     res.append_header(SET_COOKIE, code_verifier_cookie);
     res.append_header(SET_COOKIE, state_cookie);
     res
+}
+
+pub fn logout(
+    location: String,
+    access_token_cookie: String,
+    id_token_cookie: String,
+) -> Response {
+    let mut res = Response::from_status(StatusCode::TEMPORARY_REDIRECT)
+        .with_header("location", location);
+    res.append_header(SET_COOKIE, access_token_cookie);
+    res.append_header(SET_COOKIE, id_token_cookie);
+    res
+}
+
+pub fn slo_logout(
+    access_token_cookie: String,
+    id_token_cookie: String,
+) -> Response {
+    let mut res = ok()
+        .with_header(SET_COOKIE, access_token_cookie);
+    res.append_header(SET_COOKIE, id_token_cookie);
+    res.set_body_text_plain("Logged out");
+    res
+}
+
+pub fn home() -> Response {
+    let mut res = Response::from_status(StatusCode::TEMPORARY_REDIRECT)
+        .with_header("location", "/");
+    res
+}
+
+pub fn ok() -> Response {
+    Response::from_status(StatusCode::OK)
+        .with_body_text_plain("Logged out")
 }

@@ -2,8 +2,10 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Default)]
 pub struct CallbackQueryParameters {
-    pub code: String,
-    pub state: String,
+    pub code: Option<String>,
+    pub state: Option<String>,
+    pub error: Option<String>,
+    pub error_description: Option<String>,
 }
 
 #[derive(Deserialize, Default)]

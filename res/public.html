@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DeveloperWeek CloudX Demo - Proxy via Fastly Compute@Edge Application</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel='stylesheet'
+          href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css'
+          integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM"
+          crossorigin="anonymous">
+</head>
+<body>
+<nav class="navbar navbar-default">
+    <div class="container-fluid">
+        <ul class="nav navbar-nav">
+            <img src="https://assets-global.website-files.com/63d32de856f6323a43a277f2/63d32de856f6326171a27822_logo-backblaze-flame-header.4851ea2289eaf4242079c6dcd0acb1be.png" height="50" style="padding: 10px;">
+        </ul>
+        <form class="navbar-form navbar-right" method="get" action="/login">
+            <button class="btn btn-primary" id="login-button" type="submit">Login</button>
+        </form>
+    </div>
+</nav>
+<div class="container" id="content">
+    <h2>DeveloperWeek CloudX Demo - Proxy via Fastly Compute@Edge Application</h2>
+    <br>
+    <div>
+        <p>You are not currently authenticated against your Okta org.</p>
+        <p>Click below to login via Okta.</p>
+    </div>
+    <p>
+        <a href="/login">Login</a>
+    </p>
+</div>
+</body>
+</html>

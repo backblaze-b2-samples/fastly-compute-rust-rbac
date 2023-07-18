@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 
-const COOKIE_ATTRIBUTES: &str = "Path=/; SameSite=Lax; Secure; HttpOnly";
-const COOKIE_PREFIX: &str = "__Secure-";
+// Don't use HttpOnly, as we want JS to have access to the cookies
+// Need SameSite=None for Okta single logout - need to present cookie in iframe
+const COOKIE_ATTRIBUTES: &str = "Path=/; SameSite=None; Secure";
+const COOKIE_PREFIX: &str = "b2-fastly-demo-";
 
 pub fn parse(cookie_string: &str) -> HashMap<&str, &str> {
     cookie_string
