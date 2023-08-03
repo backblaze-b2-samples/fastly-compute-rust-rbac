@@ -89,16 +89,30 @@ Add `https://{your-fastly-domain}/callback` to the list of allowed callback URLs
 
 This allows the authorization server to send the user back to the Compute@Edge service.
 
-### Create a Fastly Config Store
+### Create a Fastly Secret Store
 
-At present, the sample stores its Backblaze B2 credentials in a config store. [Create a config store](https://docs.fastly.com/en/guides/working-with-config-stores#creating-a-config-store) named `DevWeek2023`, adding the following key-value pairs:
+The sample stores its Backblaze B2 credentials in a [secret store](https://developer.fastly.com/reference/api/services/resources/secret-store/). At present, the secret store feature is part of a beta release. Open a Fastly support ticket to request that secret store be enabled for your Fastly account.
+
+Once the secret store feature is enabled for your account, create a secret store in the Fastly web UI:
+
+* Click **Resources** in the top navigation menu.
+* Click the **Secret stores** tab.
+* Click **Create a secret store** and name it `devweek2023-demo`. 
+
+Add the following key-value pairs:
 
 * `B2_APPLICATION_KEY_ID`: your Backblaze B2 application key ID
 * `B2_APPLICATION_KEY`: your Backblaze B2 application key
 
-[Link the config store to your Fastly service](https://docs.fastly.com/en/guides/working-with-config-stores#linking-config-stores-to-a-service).
+Link the secret store to your Fastly service:
 
-Note - you may use an alternative name for your config store. If you do so, you will need to change the value of the `FASTLY_CONFIG_STORE` constant in [main.rs](https://github.com/backblaze-b2-samples/devweek2023-demo/blob/main/src/main.rs#L25). 
+* Click the **Link to services** button.
+* Select your Fastly service.
+* Click the **Next** button.
+* Select **Link and activate**.
+* Click **Confirm and activate** to link the secret store to a new version of the service and activate that version. 
+
+Note - you may use an alternative name for your secret store. If you do so, you will need to change the value of the `FASTLY_SECRET_STORE` constant in [main.rs](https://github.com/backblaze-b2-samples/devweek2023-demo/blob/main/src/main.rs#L25). 
 
 ### Upload the Sample App Resources to B2
 

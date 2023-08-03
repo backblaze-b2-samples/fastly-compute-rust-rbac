@@ -7,12 +7,12 @@ mod pkce;
 mod responses;
 
 use std::collections::{HashMap, HashSet};
-use std::{env, fmt};
+use std::{env};
 use chrono::Utc;
 use config::Config;
 use crate::awsv4::hash;
 use fastly::http::header::{AUTHORIZATION};
-use fastly::{Backend, Body, ConfigStore, Error, Request, Response};
+use fastly::{Backend, Body, SecretStore, Error, Request, Response};
 use idp::{AuthCodePayload, AuthorizeResponse, CallbackQueryParameters, ExchangePayload};
 use jwt::{validate_token_rs256, NonceToken};
 use jwt_simple::claims::{JWTClaims, NoCustomClaims};
@@ -22,7 +22,7 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 
 // Fastly objects
-const FASTLY_CONFIG_STORE: &str = "DevWeek2023";
+const FASTLY_SECRET_STORE: &str = "devweek2023-demo";
 const B2_BACKEND: &str = "backend";
 const AUTH_SERVER_BACKEND: &str = "idp";
 
@@ -124,7 +124,7 @@ fn main(mut req: Request) -> Result<Response, Error> {
             return handle_slo();
         }
 
-        let claims = match validate_tokens(&mut req, &settings, access_token, id_token) {
+        let claims = match validate_tokens(&settings, access_token, id_token) {
             Ok(claims) => claims,
             Err(response) => {
                 return Ok(response);
@@ -350,7 +350,6 @@ fn handle_authorization_code(
 }
 
 fn validate_tokens(
-    req: &mut Request,
     settings: &Config,
     access_token: &&str,
     id_token: &&str
@@ -416,14 +415,29 @@ fn send_to_backend(mut req: Request, allow_browser_caching: bool) -> Result<Resp
 
 fn sign_request(req: &mut Request) -> Result<(), Error> {
     // Get Backblaze B2 credentials
-    let config = ConfigStore::open(FASTLY_CONFIG_STORE);
+    let config = match SecretStore::open(FASTLY_SECRET_STORE) {
+        Ok(store) => store,
+        Err(error) => {
+            return Err(Error::msg(format!("Error opening secret store: {}", error)));
+        }
+    };
 
     let access_key_id = match config.get("B2_APPLICATION_KEY_ID") {
-        Some(id) => id,
+        Some(secret) => match String::from_utf8(secret.plaintext().to_vec()) {
+            Ok(id) => id,
+            Err(_) => {
+                return Err(Error::msg("Can't decode app key id value."))
+            }
+        },
         _ => return Err(Error::msg("Can't read app key id from config store.")),
     };
     let secret_access_key = match config.get("B2_APPLICATION_KEY") {
-        Some(key) => key,
+        Some(secret) => match String::from_utf8(secret.plaintext().to_vec()) {
+            Ok(key) => key,
+            Err(_) => {
+                return Err(Error::msg("Can't decode app key value."))
+            }
+        },
         _ => return Err(Error::msg("Can't read app key from config store.")),
     };
 

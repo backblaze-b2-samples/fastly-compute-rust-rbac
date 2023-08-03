@@ -1,9 +1,8 @@
-use crate::cookies;
 use fastly::http::{header::SET_COOKIE, StatusCode};
-use fastly::{Body, Error, Request, Response};
+use fastly::{Body, Response};
 
 pub fn unauthorized(body: impl Into<Body>) -> Response {
-    let mut res = Response::from_body(body)
+    let res = Response::from_body(body)
         .with_status(StatusCode::UNAUTHORIZED);
     res
 }
@@ -48,7 +47,7 @@ pub fn slo_logout(
 }
 
 pub fn home() -> Response {
-    let mut res = Response::from_status(StatusCode::TEMPORARY_REDIRECT)
+    let res = Response::from_status(StatusCode::TEMPORARY_REDIRECT)
         .with_header("location", "/");
     res
 }
