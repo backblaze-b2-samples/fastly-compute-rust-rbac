@@ -1,5 +1,10 @@
 on: pull_request
 name: Test
+
+permissions:
+  actions: write
+  contents: read
+
 jobs:
   test:
     strategy:
