@@ -9,13 +9,13 @@ debug = false
 
 [dependencies]
 chrono = "0.4.26"
-fastly = "0.9.5"
+fastly = "0.13"
 hex = "0.4.2"
 hmac-sha256 = "1.1.6"
-jwt-simple = "0.11.4"
+jwt-simple = "0.15"
 lazy_static = "1.4.0"
 log = "0.4.19"
-log-fastly = "0.9.5"
+log-fastly = "0.13"
 rand = "0.8.5"
 regex = "1.4.2"
 serde = { version = "1.0.159", features = ["derive"] }
