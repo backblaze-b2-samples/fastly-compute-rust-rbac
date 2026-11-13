@@ -6,13 +6,11 @@ mod jwt;
 mod pkce;
 mod responses;
 
-use std::collections::{HashMap, HashSet};
-use std::{env};
+use crate::awsv4::hash;
 use chrono::Utc;
 use config::Config;
-use crate::awsv4::hash;
-use fastly::http::header::{AUTHORIZATION};
-use fastly::{Backend, Body, SecretStore, Error, Request, Response};
+use fastly::http::header::AUTHORIZATION;
+use fastly::{Backend, Body, Error, Request, Response, SecretStore};
 use idp::{AuthCodePayload, AuthorizeResponse, CallbackQueryParameters, ExchangePayload};
 use jwt::{validate_token_rs256, NonceToken};
 use jwt_simple::claims::{JWTClaims, NoCustomClaims};
@@ -20,20 +18,16 @@ use lazy_static::lazy_static;
 use pkce::{rand_chars, Pkce};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, HashSet};
+use std::env;
 
 // Fastly objects
 const FASTLY_SECRET_STORE: &str = "devweek2023-demo";
 const B2_BACKEND: &str = "backend";
 const AUTH_SERVER_BACKEND: &str = "idp";
 
-const MAX_LEN_APPLICATION_KEY_ID: usize = 25;
-const MAX_LEN_APPLICATION_KEY: usize = 31;
-
 // These paths will be served with no authentication
-const PUBLIC_PATHS: &[&str] = &[
-    "/favicon.ico",
-    "/logged-out.html"
-];
+const PUBLIC_PATHS: &[&str] = &["/favicon.ico", "/logged-out.html"];
 
 // Public home page
 const PUBLIC_HOME: &str = "/public.html";
@@ -49,7 +43,8 @@ const LOGIN: &str = "/login";
 
 // Regex for extracting region from endpoint of form <bucketname>.s3.<region>.backblazeb2.com
 lazy_static! {
-    static ref REGION_REGEX: Regex = Regex::new(r"^[[:alnum:]\-]+\.s3\.([[:alnum:]\-]+)\.backblazeb2\.com$").unwrap();
+    static ref REGION_REGEX: Regex =
+        Regex::new(r"^[[:alnum:]\-]+\.s3\.([[:alnum:]\-]+)\.backblazeb2\.com$").unwrap();
 }
 
 // Define a custom claim set containing just the "groups" claim
@@ -79,10 +74,7 @@ fn main(mut req: Request) -> Result<Response, Error> {
 
     // Build the base URL, e.g. "https://devweek2023-demo.edgecompute.app"
     // No trailing slash!
-    let base_uri = format!(
-        "https://{}",
-        req.get_url().host_str().unwrap()
-    );
+    let base_uri = format!("https://{}", req.get_url().host_str().unwrap());
 
     // Load the service configuration, and the OpenID discovery and token signature metadata.
     let settings = Config::load();
@@ -92,11 +84,7 @@ fn main(mut req: Request) -> Result<Response, Error> {
     let cookie = cookies::parse(&cookie_header);
 
     // Build the OAuth 2.0 redirect URL.
-    let redirect_uri = format!(
-        "{}{}",
-        base_uri,
-        settings.config.callback_path
-    );
+    let redirect_uri = format!("{}{}", base_uri, settings.config.callback_path);
 
     // If the path matches the redirect URL path, continue the OAuth 2.0 authorization code flow.
     if req.get_url_str().starts_with(&redirect_uri) {
@@ -128,13 +116,16 @@ fn main(mut req: Request) -> Result<Response, Error> {
             Ok(claims) => claims,
             Err(response) => {
                 return Ok(response);
-            },
+            }
         };
 
         log::info!("Authentication successful!");
         log::info!("ID token: {}", id_token);
         log::info!("Access token: {}", access_token);
-        log::info!("Parsed claims: {}", serde_json::to_string_pretty(&claims).unwrap());
+        log::info!(
+            "Parsed claims: {}",
+            serde_json::to_string_pretty(&claims).unwrap()
+        );
 
         if req.get_path() == "/" {
             req.set_path(PRIVATE_HOME);
@@ -143,7 +134,7 @@ fn main(mut req: Request) -> Result<Response, Error> {
         return match authorize_request(&mut req, claims) {
             // Sign and send the request to the origin backend.
             Ok(_) => send_to_backend(req, false),
-            Err(response) => Ok(response)
+            Err(response) => Ok(response),
         };
     }
 
@@ -176,7 +167,12 @@ fn main(mut req: Request) -> Result<Response, Error> {
     start_authorization_flow(&mut req, &settings, &redirect_uri, target_path)
 }
 
-fn start_authorization_flow(req: &mut Request, settings: &Config, redirect_uri: &String, target_path: String) -> Result<Response, Error> {
+fn start_authorization_flow(
+    req: &mut Request,
+    settings: &Config,
+    redirect_uri: &String,
+    target_path: String,
+) -> Result<Response, Error> {
     // Generate the Proof Key for Code Exchange (PKCE) code verifier and code challenge.
     let pkce = Pkce::new(settings.config.code_challenge_method);
 
@@ -237,9 +233,12 @@ fn authorize_request(req: &mut Request, claims: JWTClaims<GroupsClaim>) -> Resul
         match claims.custom.groups {
             Some(groups) => {
                 if !groups.contains(&directory.to_string()) {
-                    return Err(responses::unauthorized(format!("Access to /{} directory denied!", directory)));
+                    return Err(responses::unauthorized(format!(
+                        "Access to /{} directory denied!",
+                        directory
+                    )));
                 }
-            },
+            }
             _ => {
                 return Err(responses::unauthorized("Missing groups claim"));
             }
@@ -261,10 +260,7 @@ fn handle_logout(base_uri: String, settings: &Config, id_token: &&str) -> Result
     log::debug!("Logging out");
     let location = format!(
         "{}?id_token_hint={}&post_logout_redirect_uri={}{}",
-        settings.openid_configuration.end_session_endpoint,
-        id_token,
-        base_uri,
-        LOGOUT_INTERSTITIAL
+        settings.openid_configuration.end_session_endpoint, id_token, base_uri, LOGOUT_INTERSTITIAL
     );
     Ok(responses::logout(
         location,
@@ -277,7 +273,7 @@ fn handle_authorization_code(
     req: &mut Request,
     settings: &Config,
     cookie: &HashMap<&str, &str>,
-    redirect_uri: &String
+    redirect_uri: &String,
 ) -> Result<Response, Error> {
     // VERIFY THE AUTHORIZATION CODE AND EXCHANGE IT FOR TOKENS.
     log::debug!("In callback; verifying authorization code");
@@ -288,12 +284,15 @@ fn handle_authorization_code(
     // Handle errors from authorization service
     match (qs.error, qs.error_description) {
         (Some(error_value), Some(error_description)) => {
-            return Ok(responses::unauthorized(format!("{}: {}", error_value, error_description)));
-        },
+            return Ok(responses::unauthorized(format!(
+                "{}: {}",
+                error_value, error_description
+            )));
+        }
         (Some(error_value), _) => {
             return Ok(responses::unauthorized(format!("{}", error_value)));
-        },
-        _ => ()
+        }
+        _ => (),
     }
 
     // Verify that the state matches what we've stored, and exchange the authorization code for tokens.
@@ -301,7 +300,9 @@ fn handle_authorization_code(
         (Some(state), Some(code_verifier)) => {
             // Authenticate the state token returned by the IdP,
             // and verify that the state we stored matches its subject claim.
-            match NonceToken::new(settings.config.nonce_secret).get_claimed_state(&qs.state.unwrap()) {
+            match NonceToken::new(settings.config.nonce_secret)
+                .get_claimed_state(&qs.state.unwrap())
+            {
                 Some(claimed_state) => {
                     if state != &claimed_state {
                         return Ok(responses::unauthorized("State mismatch."));
@@ -328,8 +329,7 @@ fn handle_authorization_code(
                 log::debug!("Verified authorization code; proceeding with original request");
 
                 // Strip the random state from the state cookie value to get the original request.
-                let original_req =
-                    &state[..(state.len() - settings.config.state_parameter_length)];
+                let original_req = &state[..(state.len() - settings.config.state_parameter_length)];
                 // Deserialize the response from the authorize step.
                 let auth = exchange_res.take_body_json::<AuthorizeResponse>().unwrap();
                 // Replay the original request, setting the tokens as cookies.
@@ -352,7 +352,7 @@ fn handle_authorization_code(
 fn validate_tokens(
     settings: &Config,
     access_token: &&str,
-    id_token: &&str
+    id_token: &&str,
 ) -> Result<JWTClaims<GroupsClaim>, Response> {
     log::debug!("Extracted tokens from cookies; validating");
     if settings.config.introspect_access_token {
@@ -361,7 +361,8 @@ fn validate_tokens(
         // depending on your Identity Provider configuration.
         let mut userinfo_res = match Request::get(settings.openid_configuration.userinfo_endpoint)
             .with_header(AUTHORIZATION, format!("Bearer {}", access_token))
-            .send(AUTH_SERVER_BACKEND) {
+            .send(AUTH_SERVER_BACKEND)
+        {
             Ok(res) => res,
             Err(error) => {
                 return Err(responses::unauthorized(Body::from(error.to_string())));
@@ -384,7 +385,10 @@ fn validate_tokens(
     // Validate the ID token.
     match validate_token_rs256::<GroupsClaim>(id_token, &settings) {
         Ok(claims) => Ok(claims),
-        Err(error) => Err(responses::unauthorized(format!("ID token invalid: {}", error.to_string())))
+        Err(error) => Err(responses::unauthorized(format!(
+            "ID token invalid: {}",
+            error.to_string()
+        ))),
     }
 }
 
@@ -393,23 +397,27 @@ fn send_to_backend(mut req: Request, allow_browser_caching: bool) -> Result<Resp
     match sign_request(&mut req) {
         Ok(_) => (),
         Err(error) => {
-            return Ok(responses::unauthorized(format!("Error: {}", error.to_string())));
-        },
+            return Ok(responses::unauthorized(format!(
+                "Error: {}",
+                error.to_string()
+            )));
+        }
     }
 
     match req.send(B2_BACKEND) {
         Ok(mut res) => {
             log::info!("Backend status code: {}", res.get_status());
 
-            if ! allow_browser_caching {
+            if !allow_browser_caching {
                 res.set_header("Cache-Control", "private, no-store");
             }
 
             Ok(res)
-        },
-        Err(error) => {
-            Ok(responses::unauthorized(format!("Error: {}", error.root_cause().to_string())))
         }
+        Err(error) => Ok(responses::unauthorized(format!(
+            "Error: {}",
+            error.root_cause().to_string()
+        ))),
     }
 }
 
@@ -425,18 +433,14 @@ fn sign_request(req: &mut Request) -> Result<(), Error> {
     let access_key_id = match config.get("B2_APPLICATION_KEY_ID") {
         Some(secret) => match String::from_utf8(secret.plaintext().to_vec()) {
             Ok(id) => id,
-            Err(_) => {
-                return Err(Error::msg("Can't decode app key id value."))
-            }
+            Err(_) => return Err(Error::msg("Can't decode app key id value.")),
         },
         _ => return Err(Error::msg("Can't read app key id from config store.")),
     };
     let secret_access_key = match config.get("B2_APPLICATION_KEY") {
         Some(secret) => match String::from_utf8(secret.plaintext().to_vec()) {
             Ok(key) => key,
-            Err(_) => {
-                return Err(Error::msg("Can't decode app key value."))
-            }
+            Err(_) => return Err(Error::msg("Can't decode app key value.")),
         },
         _ => return Err(Error::msg("Can't read app key from config store.")),
     };
@@ -449,14 +453,20 @@ fn sign_request(req: &mut Request) -> Result<(), Error> {
 
     let host = backend.get_host();
 
-    let bucket_region = REGION_REGEX.captures(host.as_str()).unwrap().get(1).unwrap().as_str().to_string();
+    let bucket_region = REGION_REGEX
+        .captures(host.as_str())
+        .unwrap()
+        .get(1)
+        .unwrap()
+        .as_str()
+        .to_string();
 
     let client = awsv4::SignatureClient {
         access_key_id,
         secret_access_key,
         host,
         bucket_region,
-        query_string: req.get_query_str().unwrap_or("").to_string()
+        query_string: req.get_query_str().unwrap_or("").to_string(),
     };
 
     let now = Utc::now();
