@@ -1,2 +1,6 @@
 [advisories]
-ignore = ["RUSTSEC-2020-0159"]
+# RUSTSEC-2023-0071 (rsa, Marvin attack) is a timing side channel on RSA
+# private-key operations. This service only verifies RS256 tokens with the
+# identity provider's public key (src/jwt.rs), and jwt-simple has no release on
+# rsa >= 0.10 yet. Drop this once it does.
+ignore = ["RUSTSEC-2020-0159", "RUSTSEC-2023-0071"]

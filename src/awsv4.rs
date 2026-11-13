@@ -37,9 +37,7 @@ impl SignatureClient {
         // These must be sorted alphabetically
         let canonical_headers = format!(
             "host:{}\nx-amz-content-sha256:{}\nx-amz-date:{}\n",
-            self.host,
-            amz_content_256,
-            x_amz_date
+            self.host, amz_content_256, x_amz_date
         );
 
         // Danger Will Robinson! We are not sorting the query parameters!
@@ -58,10 +56,7 @@ impl SignatureClient {
             amz_content_256
         );
 
-        let credential_scope = format!(
-            "{}/{}/s3/aws4_request",
-            x_amz_today, self.bucket_region
-        );
+        let credential_scope = format!("{}/{}/s3/aws4_request", x_amz_today, self.bucket_region);
 
         let signed_canonical_request = hash(canonical_request);
 
@@ -71,17 +66,12 @@ impl SignatureClient {
         );
 
         // Generate the signature through the multi-step signing process
-        let signature = [
-            &self.bucket_region,
-            "s3",
-            "aws4_request",
-            &string_to_sign,
-        ]
-        .iter()
-        .fold(
-            sign(&format!("AWS4{}", self.secret_access_key), &x_amz_today),
-            |acc, x| sign(&acc, x),
-        );
+        let signature = [&self.bucket_region, "s3", "aws4_request", &string_to_sign]
+            .iter()
+            .fold(
+                sign(&format!("AWS4{}", self.secret_access_key), &x_amz_today),
+                |acc, x| sign(&acc, x),
+            );
 
         // Compose authorization header value
         format!(
