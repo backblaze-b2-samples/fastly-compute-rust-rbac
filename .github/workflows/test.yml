@@ -12,9 +12,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - name: Install Rust
-      uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # v1.0.7
-      with:
-        toolchain: ${{ matrix.rust-toolchain }}
+      run: rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal && rustup default "$RUST_TOOLCHAIN"
+      shell: bash
+      env:
+        RUST_TOOLCHAIN: ${{ matrix.rust-toolchain }}
     - name: Add wasm32-wasip1 Rust target
       run: rustup target add wasm32-wasip1 --toolchain ${{ matrix.rust-toolchain }}
     - name: Cache cargo registry
